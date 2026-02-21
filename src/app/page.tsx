@@ -26,6 +26,7 @@ export default async function HomePage() {
                 <img 
                   src={product.image} 
                   alt={product.title} 
+                  loading="lazy"
                   className="max-h-40 object-contain group-hover:scale-110 transition-transform duration-500" 
                 />
               </div>
