@@ -1,49 +1,30 @@
+"use client"; // Wajib karena ada interaksi tombol
+import { useWishlist } from "@/store/useWishlist";
 import { ArrowLeft, Heart, Star, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-
-// Memastikan SSR
-export const dynamic = "force-dynamic";
+import { use, useState } from "react";
 
 async function getProduct(id: string) {
-  try {
-    const res = await fetch(`https://fakestoreapi.com/products/${id}`, { 
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-    
-    // Cek jika response tidak oke
-    if (!res.ok) return null;
-    
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error("Fetch error:", error);
-    return null;
-  }
+  const res = await fetch(`https://fakestoreapi.com/products/${id}`);
+  if (!res.ok) return null;
+  return res.json();
 }
 
-// Gunakan Promise<{ id: string }> untuk Next.js versi terbaru
-export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  // 1. Await params-nya dulu (Wajib di Next.js 15+)
-  const resolvedParams = await params;
+export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const product = use(getProduct(resolvedParams.id));
   
-  // 2. Ambil data produk
-  const product = await getProduct(resolvedParams.id);
+  // Ambil fungsi 'inc' dari Zustand
+  const { inc } = useWishlist() as any;
+  const [isAdded, setIsAdded] = useState(false);
 
-  // 3. Jika produk tidak ada atau API error, tampilkan pesan ramah
-  if (!product || !product.title) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#F5F5DC] p-10">
-        <h2 className="text-2xl font-serif text-[#4A3B4F] mb-4">Gagal memuat detail produk</h2>
-        <p className="text-gray-500 mb-6 text-center italic">Coba refresh halaman atau periksa koneksi internet kamu.</p>
-        <Link href="/" className="bg-[#A569BD] text-white px-6 py-2 rounded-full hover:bg-[#4A3B4F] transition-all">
-          Kembali ke Katalog
-        </Link>
-      </div>
-    );
-  }
+  if (!product) return <div className="p-20 text-center">Produk tidak ditemukan.</div>;
+
+  const handleWishlist = () => {
+    inc(); // Menambah angka di Navbar
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 1000); // Efek animasi tombol
+  };
 
   return (
     <div className="min-h-screen p-6 md:p-16 flex justify-center items-center bg-[#F5F5DC]">
@@ -51,33 +32,33 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         
         {/* Sisi Kiri: Gambar */}
         <div className="md:w-1/2 p-12 bg-[#EADDCA]/20 flex items-center justify-center relative">
-          <img 
-            src={product.image} 
-            alt={product.title} 
-            className="max-h-[350px] object-contain mix-blend-multiply" 
-          />
+          <img src={product.image} alt={product.title} className="max-h-[350px] object-contain mix-blend-multiply" />
           <div className="absolute top-6 left-6">
-            <Link href="/" className="flex items-center text-[#A569BD] hover:gap-2 transition-all font-medium">
-              <ArrowLeft size={20} className="mr-2" /> Kembali
+            <Link href="/" className="flex items-center text-[#A569BD] font-medium tracking-tight">
+              <ArrowLeft size={20} className="mr-2" /> Back
             </Link>
           </div>
         </div>
 
         {/* Sisi Kanan: Detail */}
-        <div className="md:w-1/2 p-12 flex flex-col justify-center text-[#4A3B4F]">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="bg-[#A569BD] text-white text-[10px] px-3 py-1 rounded-full uppercase tracking-widest font-bold">
-              SSR - Server Side
-            </span>
-          </div>
-
-          <h1 className="text-2xl md:text-3xl font-serif font-bold mb-4 leading-tight">{product.title}</h1>
-          <p className="text-gray-500 mb-8 italic text-sm leading-relaxed">"{product.description}"</p>
+        <div className="md:w-1/2 p-12 flex flex-col justify-center">
+          <span className="bg-[#A569BD] text-white text-[10px] px-3 py-1 rounded-full w-fit mb-4 font-bold uppercase tracking-widest">
+            SSR Rendered
+          </span>
+          <h1 className="text-3xl font-serif text-[#4A3B4F] mb-4">{product.title}</h1>
+          <p className="text-gray-500 mb-8 italic text-sm">"{product.description}"</p>
 
           <div className="flex items-center justify-between">
-            <span className="text-4xl font-light">${product.price}</span>
-            <button className="bg-[#4A3B4F] text-white p-4 rounded-2xl hover:bg-[#A569BD] transition-all">
-              <Heart size={20} />
+            <span className="text-4xl font-light text-[#4A3B4F]">${product.price}</span>
+            
+            {/* TOMBOL LOVE YANG SEKARANG BISA DIKLIK */}
+            <button 
+              onClick={handleWishlist}
+              className={`p-4 rounded-2xl transition-all duration-300 transform ${
+                isAdded ? "bg-[#A569BD] scale-110" : "bg-[#4A3B4F] hover:bg-[#A569BD]"
+              } text-white`}
+            >
+              <Heart size={20} fill={isAdded ? "white" : "none"} />
             </button>
           </div>
         </div>
