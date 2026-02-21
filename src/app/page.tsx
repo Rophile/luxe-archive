@@ -2,7 +2,8 @@ import Link from 'next/link';
 
 // Fungsi untuk mengambil data dari API (Ini akan menjadi SSG secara default)
 async function getProducts() {
-  const res = await fetch('https://fakestoreapi.com/products?limit=20');
+  const res = await fetch('https://fakestoreapi.com/products?limit=20', {
+  next: { revalidate: 3600 }});
   return res.json();
 }
 
